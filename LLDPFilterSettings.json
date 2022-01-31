@@ -1,0 +1,14 @@
+{
+    "Settings": {
+        "TelnetPort": "23",
+        "DesiredLLDPInfo": [
+            "LLDP neighbor-information",
+            "Port ID type",
+            "Port ID",
+            "System name",
+            "System description",
+            "Management address  ",
+            "Neighbor index"
+        ]
+    }
+}
