@@ -129,6 +129,6 @@ dmypy.json
 .pyre/
 
 #Result files
-results.txt
-FullResults.txt
-FullOutput.txt
+*-Results.txt
+*-UnfilteredResults.txt
+*-FullOutput.txt
