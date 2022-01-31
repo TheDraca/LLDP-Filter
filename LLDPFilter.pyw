@@ -81,21 +81,20 @@ for line in output.split('\r'):
                 FinalOutput+=line+"\n"#save the line with a \n to keep it as a line in normal speak
 
 #Save final output to txt
-print ("Full switch output can be found in FullOutput.txt")
-with open ("FullOutput.txt", "w+") as OutputFile:
+print ("Full switch output can be found in {0}-FullOutput.txt".format(HOST))
+with open ("{0}-FullOutput.txt".format(HOST), "w+") as OutputFile:
     OutputFile.write(FinalOutput)
 
 #Reimport output from the text file for better reading, hacky ik
-with open ("FullOutput.txt") as file:
+with open ("{0}-FullOutput.txt".format(HOST)) as file:
     FinalOutput=file.readlines()
 
 ##Now try filter down the results a bit
 SearchTerm=input("Please enter a search term e.g: Aruba or Cisco: ")
-print("Finding ports just containing {0}".format(SearchTerm))
+print("Finding ports containing '{0}' then filtering them to wanted info".format(SearchTerm))
 
 #Store what items we want to get from the LLDP results
-InfoToFilterTo=["LLDP neighbor-information","Port ID type","Port ID","System name","System description","Management address                :","Neighbor index"]
-
+InfoToFilterTo=GetSetting("DesiredLLDPInfo")
 
 #Function to turn the massive FinalOutput string into a list with each item being one port
 def PortBuilder(FinalOutput):
@@ -117,7 +116,6 @@ def PortBuilder(FinalOutput):
 
 
 #Use port builder to make a list of ports then filter them using our search term
-print("Finding ports just containing '{0}'".format(SearchTerm))
 Results=""
 FinalResults=""
 
@@ -131,18 +129,17 @@ for Port in PortBuilder(FinalOutput):
 
 
 if len(Results)==0:
-    print("No results")
+    print("No results for {0} on {1}".format(SearchTerm,HOST))
     exit()
 
 print(FinalResults)
 
-
 #Save filtered results
-print ("Filtered lldp info stored into results.txt")
-with open ("results.txt", "w+") as OutputFile:
+print ("Filtered lldp info stored into {0}-Results.txt".format(HOST))
+with open ("{0}-Results.txt".format(HOST), "w+") as OutputFile:
     OutputFile.write(FinalResults)
 
-#Save final results to txt
-print ("Unfiltered lldp info is stored into full_results.txt")
-with open ("FullResults.txt", "w+") as OutputFile:
+#Save unfiltered results to txt
+print ("Unfiltered lldp info is stored into {0}-UnfilteredResults.txt".format(HOST))
+with open ("{0}-UnfilteredResults.txt".format(HOST), "w+") as OutputFile:
     OutputFile.write(Results)
