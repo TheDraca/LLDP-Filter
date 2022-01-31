@@ -1,14 +1,19 @@
 import getpass
-from socket import timeout
 import telnetlib
 import time
+import json
+
+###Settings file config###
+def GetSetting(SettingName,Filename="LLDPFilterSettings.json"):
+    with open(Filename, "r") as JSONFile:
+        return (json.load(JSONFile)["Settings"][SettingName])
 
 HOST = input("Enter host IP: ")
 user = input("Enter telnet username account: ")
 password = getpass.getpass()
 
 try:
-    telenetSession = telnetlib.Telnet(HOST, 23, timeout=1)
+    telenetSession = telnetlib.Telnet(HOST, GetSetting("TelnetPort"), timeout=1)
 except:
     print("Error connecting to {0}".format(HOST))
     exit()
@@ -93,7 +98,7 @@ InfoToFilterTo=["LLDP neighbor-information","Port ID type","Port ID","System nam
 
 
 #Function to turn the massive FinalOutput string into a list with each item being one port
-def PortBuilder(FinalOutput=FinalOutput):
+def PortBuilder(FinalOutput):
     PortList=[] #List that will hold each port's lines as one object
     CurrentPortInfo=""#String to build port info during line loop
     for line in FinalOutput: #Loop though each line of the output
