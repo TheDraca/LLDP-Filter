@@ -46,7 +46,7 @@ def main(Host,Username,Password,SearchTerm):
     TotalLineCount=0
 
     #Run the lldp command
-    telenetSession.write(b"dis lldp neighbor-information\r")
+    telenetSession.write(b"display lldp neighbor-information\r")
 
     #Loop adding output and pressing enter to load more if needed
     while True:
@@ -83,8 +83,8 @@ def main(Host,Username,Password,SearchTerm):
         #Check the line isn't empty or a ---- More ---- line or contain our original command or have the switch shell prompt in it
         if len(line) != 0 and "---- More ----" not in line:
             #Also check its not the original command or the ending shell line
-            if str(line) != "dis lldp neighbor-information":
-                if ">" not in str(line) and "<" not in str(line):
+            if str(line) != "display lldp neighbor-information":
+                if str(line).startswith(">") == False and str(line).endswith("<") == False:
                     FinalOutput+=line+"\n"#save the line with a \n to keep it as a line in normal speak
 
     #Save final output to txt
@@ -105,15 +105,17 @@ def main(Host,Username,Password,SearchTerm):
         PortList=[] #List that will hold each port's lines as one object
         CurrentPortInfo=""#String to build port info during line loop
         for line in FinalOutput: #Loop though each line of the output
-            if "LLDP neighbor-information of port" not in line or len(CurrentPortInfo) == 0: # only add line to current port info if  we're not on the start of another one! Wtih exceptio to first port
+            if len(CurrentPortInfo) == 0: # we're on a new port add in the line regardless
                 CurrentPortInfo+=line
-            else:
+            elif "LLDP neighbor-information of port" in line: # new line is creating a new port
                 PortList.append(CurrentPortInfo) #Store all info to port list
                 #Reset port list info
                 CurrentPortInfo=""
-                #Add new line info to current port
+                #Add current line into now reset current port
                 CurrentPortInfo+=line
-        #At the end of the loop make sure we save the last port
+            else: #Just another line in our output add as normal
+                CurrentPortInfo+=line
+        #At the end of the loop make sure we save the last port!
         PortList.append(CurrentPortInfo)
         return PortList
 
