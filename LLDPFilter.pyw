@@ -84,7 +84,7 @@ def main(Host,Username,Password,SearchTerm):
         if len(line) != 0 and "---- More ----" not in line:
             #Also check its not the original command or the ending shell line
             if str(line) != "display lldp neighbor-information":
-                if str(line).startswith(">") == False and str(line).endswith("<") == False:
+                if str(line).startswith("<") == False and str(line).endswith(">") == False:
                     FinalOutput+=line+"\n"#save the line with a \n to keep it as a line in normal speak
 
     #Save final output to txt
