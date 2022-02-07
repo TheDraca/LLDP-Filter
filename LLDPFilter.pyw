@@ -17,6 +17,7 @@ def main(Host,Username,Password,SearchTerm):
         if GetSetting("MultiMode") == False:
             exit() #Only exit whole script if we aren't attempting other hosts
         else:
+            print("Failed to connect to {0} - Skipping!".format(Host))
             return #Skip attempting this host if it fails
 
     #Send login username to host
@@ -33,6 +34,7 @@ def main(Host,Username,Password,SearchTerm):
         if GetSetting("MultiMode") == False:
             exit() #Only exit whole script if we aren't attempting other hosts
         else:
+            print("Failed to login to {0} - Skipping!".format(Host))
             return #Skip attempting this host if it fails
 
     #Let user know we're starting to work on host
