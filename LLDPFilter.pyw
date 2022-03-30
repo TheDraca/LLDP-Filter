@@ -1,7 +1,17 @@
 import getpass
+from queue import Full
 import telnetlib
 import time
 import json
+import os
+from datetime import datetime
+
+#Funtion to setup DIRs if they don't exist
+
+def CheckDir(FilePath):
+    DirPath= os.path.dirname(FilePath)
+    if not os.path.exists(DirPath):
+        os.makedirs(DirPath)
 
 ###Settings file config###
 def GetSetting(SettingName,Filename="LLDPFilterSettings.json"):
@@ -9,9 +19,33 @@ def GetSetting(SettingName,Filename="LLDPFilterSettings.json"):
         return (json.load(JSONFile)["Settings"][SettingName])
 
 
-def main(Host,Username,Password,SearchTerm):
+#Store what items we want to get from the LLDP results
+InfoToFilterTo=GetSetting("DesiredLLDPInfo")
+
+#Function to turn the massive FinalOutput string into a list with each item being one port
+def PortBuilder(FinalOutput):
+    PortList=[] #List that will hold each port's lines as one object
+    CurrentPortInfo=""#String to build port info during line loop
+    for line in FinalOutput: #Loop though each line of the output
+        if len(CurrentPortInfo) == 0: # we're on a new port add in the line regardless
+            CurrentPortInfo+=line
+        elif "LLDP neighbor-information of port" in line: # new line is creating a new port
+            PortList.append(CurrentPortInfo) #Store all info to port list
+            #Reset port list info
+            CurrentPortInfo=""
+            #Add current line into now reset current port
+            CurrentPortInfo+=line
+        else: #Just another line in our output add as normal
+            CurrentPortInfo+=line
+    #At the end of the loop make sure we save the last port!
+    PortList.append(CurrentPortInfo)
+    return PortList
+
+
+
+def main(Host,Username,Password,SearchTerm,TimeStamp,TelnetPort=GetSetting("TelnetPort")):
     try:
-        telenetSession = telnetlib.Telnet(Host, GetSetting("TelnetPort"), timeout=1)
+        telenetSession = telnetlib.Telnet(Host, TelnetPort, timeout=1)
     except:
         print("Error connecting to {0}".format(Host))
         if GetSetting("MultiMode") == False:
@@ -41,6 +75,17 @@ def main(Host,Username,Password,SearchTerm):
     #Store an empty output variable ready to build the full response
     output=""
 
+    #Setup DIR names for output later
+    FullOutputDir=os.path.join("Outputs","{0}","Raw","{1}-FullOutput.txt").format(TimeStamp,Host)
+    UnfilteredResultsDir=os.path.join("Outputs","{0}","Raw_Results","{1}-UnfilteredResults.txt").format(TimeStamp,Host)
+    ResultsDir=os.path.join("Outputs","{0}","Results","{1}-Results.txt").format(TimeStamp,Host)
+
+    #Check if those DIR's exist, if not create them
+    CheckDir(FullOutputDir)
+    CheckDir(UnfilteredResultsDir)
+    CheckDir(ResultsDir)
+    
+    
     #Store some counters for later
     LastLineCount=0
     TotalLineCount=0
@@ -88,38 +133,15 @@ def main(Host,Username,Password,SearchTerm):
                     FinalOutput+=line+"\n"#save the line with a \n to keep it as a line in normal speak
 
     #Save final output to txt
-    print ("Full switch output can be found in {0}-FullOutput.txt".format(Host))
-    with open ("{0}-FullOutput.txt".format(Host), "w+") as OutputFile:
+    print ("Full switch output can be found in {0}".format(FullOutputDir))
+    with open (FullOutputDir, "w+") as OutputFile:
         OutputFile.write(FinalOutput)
 
     #Reimport output from the text file for better reading, hacky ik
-    with open ("{0}-FullOutput.txt".format(Host)) as file:
+    with open (FullOutputDir) as file:
         FinalOutput=file.readlines()
 
     ######Filter Results########
-    #Store what items we want to get from the LLDP results
-    InfoToFilterTo=GetSetting("DesiredLLDPInfo")
-
-    #Function to turn the massive FinalOutput string into a list with each item being one port
-    def PortBuilder(FinalOutput):
-        PortList=[] #List that will hold each port's lines as one object
-        CurrentPortInfo=""#String to build port info during line loop
-        for line in FinalOutput: #Loop though each line of the output
-            if len(CurrentPortInfo) == 0: # we're on a new port add in the line regardless
-                CurrentPortInfo+=line
-            elif "LLDP neighbor-information of port" in line: # new line is creating a new port
-                PortList.append(CurrentPortInfo) #Store all info to port list
-                #Reset port list info
-                CurrentPortInfo=""
-                #Add current line into now reset current port
-                CurrentPortInfo+=line
-            else: #Just another line in our output add as normal
-                CurrentPortInfo+=line
-        #At the end of the loop make sure we save the last port!
-        PortList.append(CurrentPortInfo)
-        return PortList
-
-
     #Use port builder to make a list of ports then filter them using our search term
     Results=""
     FinalResults=""
@@ -141,29 +163,32 @@ def main(Host,Username,Password,SearchTerm):
             return #Skip attempting this host if it fails
 
     #Save filtered results
-    print ("Filtered lldp info stored into {0}-Results.txt".format(Host))
-    with open ("{0}-Results.txt".format(Host), "w+") as OutputFile:
+    print ("Filtered lldp info stored into {0}".format(ResultsDir))
+    with open (ResultsDir, "w+") as OutputFile:
         OutputFile.write(FinalResults)
 
     #Save unfiltered results to txt
-    print ("Unfiltered lldp info is stored into {0}-UnfilteredResults.txt".format(Host))
-    with open ("{0}-UnfilteredResults.txt".format(Host), "w+") as OutputFile:
+    print ("Unfiltered lldp info is stored into {0}".format(UnfilteredResultsDir))
+    with open (UnfilteredResultsDir, "w+") as OutputFile:
         OutputFile.write(Results)
 
 
 
+##Get search term and login info
 SearchTerm=input("Please enter a search term e.g: Aruba or Cisco: ")
 Username = input("Enter telnet username account: ")
 Password = getpass.getpass()
 
 
+#Setup start time stamp to build DIRs later
+TimeStamp=datetime.now().strftime("%d-%m-%Y--%Hh%Mm")
+
 if GetSetting("MultiMode") == False:
     Host = input("Enter host IP: ")
-    main(Host,Username,Password,SearchTerm)
+    main(Host,Username,Password,SearchTerm,TimeStamp)
 else:
     print("MultiMode ENABLED: Using hosts in JSON file\n")
     HostList = GetSetting("MultiModeHosts")
     for Host in HostList:
-        main(Host,Username,Password,SearchTerm)
+        main(Host,Username,Password,SearchTerm,TimeStamp)
         print("\n")
-
