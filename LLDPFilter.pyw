@@ -1,5 +1,4 @@
 import getpass
-from queue import Full
 import telnetlib
 import time
 import json
