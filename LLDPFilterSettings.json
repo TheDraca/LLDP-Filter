@@ -1,7 +1,7 @@
 {
     "Settings": {
         "TelnetPort": "23",
-        "MultiMode": 1,
+        "MultiMode": 0,
         "MultiModeHosts": ["127.0.0.1","192.168.1.123"],
         "DesiredLLDPInfo": [
             "LLDP neighbor-information",
